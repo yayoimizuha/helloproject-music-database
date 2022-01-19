@@ -8,9 +8,10 @@ import json
 import pprint
 import mojimoji
 
-search_keyword = "46億年LOVE"
+search_keyword = "「ひとりで生きられそう」って それってねえ、褒めているの?"
 search_keyword = search_keyword.replace(',', '、')
 search_keyword = search_keyword.replace('&', '＆')
+search_keyword = search_keyword.replace('!', '！')
 if search_keyword[-1:].isdigit() or search_keyword[-1:].isascii():
     search_keyword += " "
 if search_keyword[0].isdigit() or search_keyword[0].isascii():
@@ -59,5 +60,24 @@ pprint.pprint(result)
 print('\n\n\n\n')
 print("収録アルバム: " + result["collectionName"])
 print("楽曲名: " + result["trackName"])
-print("iTunesページ: " + result["collectionViewUrl"])
+print("iTunesのページ: " + result["collectionViewUrl"])
 print("アートワークのURL: " + result["artworkUrl100"].replace("100x100bb", "5000x5000bb"))
+
+print('\n\n\n\n')
+search_keyword = result["collectionName"]
+# search_keyword = search_keyword.replace(',', '、')
+# search_keyword = search_keyword.replace('&', '＆')
+# search_keyword = search_keyword.replace('!', '！')
+# if search_keyword[-1:].isdigit() or search_keyword[-1:].isascii():
+#     search_keyword += " "
+# if search_keyword[0].isdigit() or search_keyword[0].isascii():
+#     search_keyword = ' ' + search_keyword
+# search_keyword = mojimoji.zen_to_han(search_keyword, ascii=False, kana=False)
+
+print('"' + search_keyword + '"')
+
+result_json = requests.get(
+    "https://itunes.apple.com/search?term=" + search_keyword +
+    "&media=music&entity=album&attribute=albumTerm&country=jp&lang=ja_jp").text
+
+pprint.pprint(json.loads(result_json))
