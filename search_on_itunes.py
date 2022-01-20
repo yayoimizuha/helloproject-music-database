@@ -1,5 +1,4 @@
 import datetime
-import math
 import random
 import re
 import sys
@@ -10,9 +9,7 @@ import joblib
 import json
 import pprint
 import mojimoji
-import Levenshtein
-
-search_keyword = "だけど会いたい"
+search_keyword = "Wonderful World"
 
 original_keyword = search_keyword
 search_keyword = search_keyword.replace(',', '、')
@@ -20,6 +17,7 @@ search_keyword = search_keyword.replace('&', '＆')
 search_keyword = search_keyword.replace('!', '！')
 search_keyword = search_keyword.replace('(', '（')
 search_keyword = search_keyword.replace(')', '）')
+search_keyword = search_keyword.replace(' ', '　')
 if search_keyword[-1:].isdigit() or search_keyword[-1:].isascii():
     search_keyword += " "
 if search_keyword[0].isdigit() or search_keyword[0].isascii():
