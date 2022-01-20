@@ -13,7 +13,7 @@ import pprint
 import mojimoji
 import Levenshtein
 
-search_keyword = "ラララ―ソソソ"
+search_keyword = "だけど会いたい"
 
 original_keyword = search_keyword
 search_keyword = search_keyword.replace(',', '、')
@@ -55,8 +55,8 @@ if first_release is sys.float_info.max:
 else:
     print("\n" + "最初のリリース: " + datetime.datetime.isoformat(datetime.datetime.fromtimestamp(first_release)) + "\n")
 
-print("検索結果: " + str(len(result_json)), end='\t\t')
-print("番号\tアーティスト名\tトラック名\t収録アルバム名\tレーベンシュタイン距離\tiTunesのURL")
+print("検索結果: " + str(len(result_json)))
+print("番号\tアーティスト名\tトラック名\t収録アルバム名\tゲシュタルトパターンマッチングによる類似率\tiTunesのURL")
 
 result_list = []
 for i in range(len(result_json)):
@@ -69,17 +69,12 @@ for i in range(len(result_json)):
 
     print(result_json[i]["collectionName"], end='\t')
 
-    levenshtein_track_distance = Levenshtein.distance(result_json[i]["trackName"], search_keyword)
-    levenshtein_collection_distance = Levenshtein.distance(result_json[i]["trackName"],
-                                                           result_json[i]["collectionName"])
-    print(str(levenshtein_track_distance) + '\t' + str(levenshtein_collection_distance), end='\t')
-    print(levenshtein_collection_distance * levenshtein_track_distance, end='\t')
     gestalt_track_distance = difflib.SequenceMatcher(None, result_json[i]["trackName"], search_keyword).ratio()
     gestalt_collection_distance = difflib.SequenceMatcher(None, result_json[i]["trackName"],
                                                           result_json[i]["collectionName"]).ratio()
-    print(gestalt_track_distance, end='\t')
-    print(gestalt_collection_distance, end='\t')
-    print(gestalt_collection_distance * gestalt_track_distance, end='\t')
+    print('{:.4f}'.format(gestalt_track_distance), end='\t')
+    print('{:.4f}'.format(gestalt_collection_distance), end='\t')
+    print('{:.5f}'.format(gestalt_track_distance * gestalt_collection_distance + gestalt_track_distance * 2), end='\t')
 
     print(result_json[i]["collectionViewUrl"], end='\t')
 
@@ -94,23 +89,17 @@ for i in range(len(result_json)):
         print('')
         continue
 
-    if "プッチベスト" in result_json[i]["collectionName"] or "プッチベスト" in result_json[i]["collectionName"]:
-        print('')
-        continue
+    # if "プッチベスト" in result_json[i]["collectionName"] or "プッチベスト" in result_json[i]["collectionName"]:
+    #     print('')
+    #     continue
 
     if "Instrumental" in result_json[i]["trackName"]:
         print('')
         continue
 
-    # if datetime.datetime.fromisoformat(album_json["results"][0]["releaseDate"][0:-1]) \
-    #         - datetime.datetime.fromisoformat(result_json[i]["releaseDate"][0:-1]) > datetime.timedelta(days=31):
-    #     print('')
-    #     continue
-
-    if result_json[i]["isStreamable"] is True:
+    if "copyright" not in album_json["results"][0]:
         print('')
         continue
-
     if 'UP-FRONT' in album_json["results"][0]["copyright"]:
         pass
     elif 'PONY CANYON' in album_json["results"][0]["copyright"]:
@@ -122,7 +111,8 @@ for i in range(len(result_json)):
     if result_json[i]["trackTimeMillis"] < 120000:
         print('')
     release_date = datetime.datetime.fromisoformat(album_json["results"][0]["releaseDate"][0:-1]).timestamp()
-    result_list.append([result_json[i]["trackId"], i, - gestalt_track_distance * gestalt_collection_distance])
+    result_list.append([result_json[i]["trackId"], i,
+                        -(gestalt_track_distance * gestalt_collection_distance + gestalt_track_distance * 2)])
     print("\n\t 👆Use at search.")
 
 if result_list is None:
