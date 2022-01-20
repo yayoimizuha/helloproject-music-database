@@ -9,8 +9,9 @@ import joblib
 import json
 import pprint
 import mojimoji
+import Levenshtein
 
-search_keyword = "3,2,1 BREAKIN'OUT!"
+search_keyword = "恋愛♡ライダー"
 
 original_keyword = search_keyword
 search_keyword = search_keyword.replace(',', '、')
@@ -53,7 +54,7 @@ else:
     print("\n" + "最初のリリース: " + datetime.datetime.isoformat(datetime.datetime.fromtimestamp(first_release)) + "\n")
 
 print("検索結果: " + str(len(result_json)), end='\t\t')
-print("番号\tアーティスト名\tトラック名\tトラックID\t収録アルバム名\t収録アルバムID\tリリース日\tiTunesのURL")
+print("番号\tアーティスト名\tトラック名\t収録アルバム名\tレーベンシュタイン距離\tiTunesのURL")
 
 result_list = []
 for i in range(len(result_json)):
@@ -61,23 +62,27 @@ for i in range(len(result_json)):
     print(i + 1, end='\t')
     print(result_json[i]["artistName"], end='\t')
     print(result_json[i]["trackName"], end='\t')
-    print(result_json[i]["trackId"], end='\t')
+    track_distance = Levenshtein.distance(result_json[i]["trackName"], search_keyword)
+    # print(track_distance, end='\t')
+    # print(result_json[i]["trackId"], end='\t')
     print(result_json[i]["collectionName"], end='\t')
-    print(result_json[i]["collectionId"], end='\t')
+    collection_distance = Levenshtein.distance(result_json[i]["trackName"], result_json[i]["collectionName"])
+    print(collection_distance * track_distance, end='\t')
+    # print(result_json[i]["collectionId"], end='\t')
     if "releaseDate" not in result_json[i]:
         print('')
         continue
-    print(result_json[i]["releaseDate"], end='\t')
+    # print(result_json[i]["releaseDate"], end='\t')
     print(result_json[i]["collectionViewUrl"], end='\t')
 
-    if result_json[i]["primaryGenreName"] != "J-Pop":
-        print('')
-        continue
+    # if result_json[i]["primaryGenreName"] != "J-Pop":
+    #     print('')
+    #     continue
 
     album_json = json.loads(requests.get("https://itunes.apple.com/lookup?country=jp&lang=ja_jp&id=" +
                                          str(result_json[i]["collectionId"])).text)
-    artist_json = requests.get(
-        "https://itunes.apple.com/lookup?country=jp&lang=ja_jp&id=" + str(result_json[i]["artistId"])).text
+    # artist_json = requests.get(
+    #     "https://itunes.apple.com/lookup?country=jp&lang=ja_jp&id=" + str(result_json[i]["artistId"])).text
 
     if album_json["resultCount"] == 0:
         print('')
@@ -93,6 +98,13 @@ for i in range(len(result_json)):
         print('')
         continue
 
+    if 'UP-FRONT' in album_json["results"][0]["copyright"]:
+        pass
+    elif 'PONY CANYON' in album_json["results"][0]["copyright"]:
+        pass
+    else:
+        print('')
+        continue
     # if result_json[i]["trackCount"] > 10:
     #     print('')
     #     continue
@@ -100,18 +112,18 @@ for i in range(len(result_json)):
     if result_json[i]["trackTimeMillis"] < 120000:
         print('')
         # continue
-    if result_json[i]["trackName"] == original_keyword:
-        print("\n\tBest Match!")
-
+    # if result_json[i]["trackName"] == original_keyword:
+    #     print("\n\tBest Match!")
+    #
     release_date = datetime.datetime.fromisoformat(album_json["results"][0]["releaseDate"][0:-1]).timestamp()
-
-    if original_keyword in result_json[i]["collectionName"]:
-        print("\tMatch!", end='')
-        flag = 1
-    else:
-        flag = -1
-    release_date -= 60 * 60 * 24 * 31 * flag
-    result_list.append([result_json[i]["trackId"], i, release_date])
+    #
+    # if original_keyword in result_json[i]["collectionName"]:
+    #     print("\tMatch!", end='')
+    #     flag = 1
+    # else:
+    #     flag = -1
+    # release_date -= 60 * 60 * 24 * 31 * flag
+    result_list.append([result_json[i]["trackId"], i, track_distance * collection_distance])
     print("\n\t 👆Use at search.")
 
 if result_list is None:
