@@ -3,10 +3,9 @@ import math
 import random
 import re
 import sys
-import urllib.parse
 import difflib
 import requests
-# import urllib, urllib.parse
+import urllib, urllib.parse
 import joblib
 import json
 import pprint
