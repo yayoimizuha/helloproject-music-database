@@ -34,11 +34,12 @@ def safe_request_get_as_text(url):
         if err_num > 5:
             continue
 
-    return text
+    return unicodedata.normalize('NFKC', text)
 
+sys.exit()
 
-search_keyword = "春ゆらら"
-artist_keyword = "GaGaalinG"
+search_keyword = "彼女になりたいっ!!!"
+artist_keyword = ""
 
 original_keyword = search_keyword
 search_keyword = unicodedata.normalize('NFKC', search_keyword)
@@ -84,7 +85,7 @@ else:
     print("\n" + "最初のリリース: " + datetime.datetime.isoformat(datetime.datetime.fromtimestamp(first_release)) + "\n")
 
 print("検索結果: " + str(len(result_json)))
-print("番号\tアーティスト名\tトラック名\t収録アルバム名\tゲシュタルトパターンマッチングによる類似率\tiTunesのURL")
+print("番号\tアーティスト名\tトラック名\t収録アルバム名\tゲシュタルトパターンマッチングによる類似率(低いほど良い)\tiTunesのURL")
 
 result_list = []
 for i in range(len(result_json)):
@@ -93,11 +94,13 @@ for i in range(len(result_json)):
     normalized_track_name = unicodedata.normalize('NFKC', result_json[i]["trackName"])
     normalized_collection_name = unicodedata.normalize('NFKC', result_json[i]["collectionName"])
     normalized_artist_name = unicodedata.normalize('NFKC', result_json[i]["artistName"])
+    normalized_artist_name = re.sub(r'\(.*\)', '', normalized_artist_name)
 
     print(normalized_artist_name, end='\t')
     print(normalized_track_name, end='\t')
     print(normalized_collection_name, end='\t')
 
+    normalized_collection_name = normalized_collection_name.replace("EP", "")
     gestalt_track_distance = difflib.SequenceMatcher(None, normalized_track_name, search_keyword).ratio()
     gestalt_collection_distance = difflib.SequenceMatcher(None, normalized_track_name,
                                                           normalized_collection_name).ratio()
@@ -105,13 +108,20 @@ for i in range(len(result_json)):
     print('{:.4f}'.format(gestalt_artist_distance), end='\t')
     print('{:.4f}'.format(gestalt_track_distance), end='\t')
     print('{:.4f}'.format(gestalt_collection_distance), end='\t')
-    print('{:.5f}'.format(
-        gestalt_track_distance * gestalt_collection_distance * gestalt_artist_distance + gestalt_track_distance * 2),
-        end='\t')
+    release_date = datetime.datetime.fromisoformat(result_json[i]["releaseDate"][0:-1]).timestamp()
+    date_distance = (time.time() - release_date) / (60 * 60 * 24 * 365 * 20)
+    print('{:.4f}'.format(date_distance), end='\t')
+    sort_index = gestalt_track_distance * gestalt_artist_distance + gestalt_collection_distance * 1 + date_distance
+    print('{:.5f}'.format(sort_index), end='\t')
+    print(datetime.datetime.fromtimestamp(release_date).strftime('%Y年%m月%d日'), end='\t')
 
     print(result_json[i]["collectionViewUrl"], end='\t')
 
     if "releaseDate" not in result_json[i]:
+        print('')
+        continue
+
+    if "Instrumental" in result_json[i]["trackName"]:
         print('')
         continue
 
@@ -126,10 +136,6 @@ for i in range(len(result_json)):
     #     print('')
     #     continue
 
-    if "Instrumental" in result_json[i]["trackName"]:
-        print('')
-        continue
-
     if "copyright" not in album_json["results"][0]:
         print('')
         continue
@@ -141,28 +147,27 @@ for i in range(len(result_json)):
         print('')
         continue
 
-    if result_json[i]["trackTimeMillis"] < 120000:
-        print('')
-    release_date = datetime.datetime.fromisoformat(album_json["results"][0]["releaseDate"][0:-1]).timestamp()
-    result_list.append([result_json[i]["trackId"], i, -(gestalt_track_distance * gestalt_collection_distance *
-                                                        gestalt_artist_distance + gestalt_track_distance * 2)])
+    result_list.append([result_json[i]["trackId"], i, -sort_index])
     print("\n\t 👆Use at search.")
 
-if result_list is None:
+if len(result_list) == 0:
+    print("\n\nヒット件数: 0\t該当するデータが見つかりませんでした。")
     sys.exit()
+
+print("\n\nヒット件数: %d" % len(result_list))
 
 random.shuffle(result_list)
 result = sorted(result_list, key=lambda x: x[2])[0][1]
 result = result_json[result]
 
 print("\n\nトラック情報:")
-result = json.loads(unicodedata.normalize('NFKC', json.dumps(result, ensure_ascii=False)))
+# result = json.loads(unicodedata.normalize('NFKC', json.dumps(result, ensure_ascii=False)))
 pprint.pprint(result)
 
 print("\n\n収録アルバム情報:")
-album_json = requests.get(
-    "https://itunes.apple.com/lookup?country=jp&lang=ja_jp&id=" + str(result["collectionId"])).text
-album_json = unicodedata.normalize('NFKC', album_json)
+album_json = safe_request_get_as_text(
+    "https://itunes.apple.com/lookup?country=jp&lang=ja_jp&id=" + str(result["collectionId"]))
+# album_json = unicodedata.normalize('NFKC', album_json)
 pprint.pprint(json.loads(album_json)["results"][0])
 
 print('\n\n')
