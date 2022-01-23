@@ -10,11 +10,12 @@ youtube = build(
     developerKey=os.environ['API_KEY']
 )
 
-itunes_search = search_on_itunes.search_on_itunes(search_keyword="初恋サイダー", artist_keyword="Buono!")
+itunes_search = search_on_itunes.search_on_itunes(search_keyword="ブスにならない哲学", artist_keyword="モベキマス")
 
-youtube_search_result = youtube.search().list(q=itunes_search[4] + ' ' + itunes_search[2], part='id,snippet',
+youtube_search_result = youtube.search().list(q='"' + itunes_search[4] + '" "' + itunes_search[2] + '"',
+                                              part='id,snippet',
                                               fields='items(id(videoId,kind),snippet(title,publishTime))',
-                                              maxResults=10).execute()
+                                              maxResults=4).execute()
 
 print('\n\n')
 
@@ -30,12 +31,12 @@ for i in range(len(search_result)):
     if search_result[i]["id"]["kind"] != "youtube#video":
         continue
     video_info = youtube.videos().list(part='contentDetails,statistics',
-                                       fields='items(contentDetails/licensedContent,statistics/viewCount,id)',
+                                       fields='items(contentDetails/licensedContent,statistics/viewCount)',
                                        id=search_result[i]["id"]["videoId"]).execute()
     if video_info["items"][0]["contentDetails"]["licensedContent"] is True:
-        print(json.dumps(video_info, indent=4, ensure_ascii=False))
-        print("https://youtu.be/" + video_info["items"][0]["id"])
-        print(video_info["items"][0]["statistics"]["viewCount"])
+        print("https://youtu.be/" + search_result[i]["id"]["videoId"])
+        print(video_info["items"][0]["statistics"]["viewCount"] + "回")
         print(search_result[i]["snippet"]["publishTime"])
         print(search_result[i]["snippet"]["title"])
+        print(json.dumps(video_info, indent=4, ensure_ascii=False))
         print('')
