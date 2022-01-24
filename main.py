@@ -1,16 +1,20 @@
-# これはサンプルの Python スクリプトです。
+import os
+import pprint
+import sys
 
-# Shift+F10 を押して実行するか、ご自身のコードに置き換えてください。
-# Shift を2回押す を押すと、クラス/ファイル/ツールウィンドウ/アクション/設定を検索します。
+import search_on_youtube
+from contextlib import redirect_stdout
 
+result = search_on_youtube.search_on_youtube(search_keyword="ポップミュージック", artist_keyword='KAN',
+                                             api_key='AIzaSyC4rd76PUGRfPZlcS9q-28VB1nV34mZv4Y', use_itunes_search=True)
 
-def print_hi(name):
-    # スクリプトをデバッグするには以下のコード行でブレークポイントを使用してください。
-    print(f'Hi, {name}')  # Ctrl+F8を押すとブレークポイントを切り替えます。
+pprint.pprint(result, indent=4)
 
+sys.exit()
 
-# ガター内の緑色のボタンを押すとスクリプトを実行します。
-if __name__ == '__main__':
-    print_hi('PyCharm')
+with redirect_stdout(open(os.devnull, 'w', encoding='utf-8-sig')):
+    result = search_on_youtube.search_on_youtube(search_keyword='ポップミュージック', artist_keyword='KAN',
+                                                 api_key='AIzaSyC4rd76PUGRfPZlcS9q-28VB1nV34mZv4Y',
+                                                 use_itunes_search=True)
 
-# PyCharm のヘルプは https://www.jetbrains.com/help/pycharm/ を参照してください
+pprint.pprint(result, indent=4)

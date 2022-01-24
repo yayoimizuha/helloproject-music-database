@@ -1,16 +1,15 @@
 import datetime
+import difflib
+import json
 import random
 import re
 import sys
-import difflib
 import time
-import requests
-import urllib, urllib.parse
-import joblib
-import json
-import pprint
-import mojimoji
 import unicodedata
+import urllib
+import urllib.parse
+import mojimoji
+import requests
 
 
 def safe_request_get_as_text(url):
@@ -38,7 +37,9 @@ def safe_request_get_as_text(url):
 
 
 def search_on_itunes(search_keyword, artist_keyword=""):
-    original_keyword = search_keyword
+    if search_keyword == '':
+        return []
+    # original_keyword = search_keyword
     search_keyword = unicodedata.normalize('NFKC', search_keyword)
     artist_keyword = unicodedata.normalize('NFKC', artist_keyword)
     search_keyword = search_keyword.replace(',', '、')
@@ -53,7 +54,11 @@ def search_on_itunes(search_keyword, artist_keyword=""):
         search_keyword = ' ' + search_keyword
     search_keyword = mojimoji.zen_to_han(search_keyword, ascii=False, kana=False)
 
-    print('検索文字列: "' + search_keyword + '"')
+    print('検索文字列: "' + search_keyword + '"', end='')
+    if artist_keyword == '':
+        print()
+    else:
+        print('\t"' + artist_keyword + '"')
     result_json = safe_request_get_as_text(
         "https://itunes.apple.com/search?term=" + search_keyword +
         "&media=music&entity=song&attribute=songTerm&country=jp&lang=ja_jp&limit=50&GenreTerm=J-Pop&sort=recent")
@@ -86,7 +91,7 @@ def search_on_itunes(search_keyword, artist_keyword=""):
 
     result_list = []
     for i in range(len(result_json)):
-        flag = 0
+        # flag = 0
         print(i + 1, end='\t')
         normalized_track_name = unicodedata.normalize('NFKC', result_json[i]["trackName"])
         normalized_collection_name = unicodedata.normalize('NFKC', result_json[i]["collectionName"])
@@ -98,6 +103,8 @@ def search_on_itunes(search_keyword, artist_keyword=""):
         print(normalized_collection_name, end='\t')
 
         normalized_collection_name = normalized_collection_name.replace("EP", "")
+        normalized_collection_name = normalized_collection_name.replace(" - Single", "")
+
         gestalt_track_distance = difflib.SequenceMatcher(None, normalized_track_name, search_keyword).ratio()
         gestalt_collection_distance = difflib.SequenceMatcher(None, normalized_track_name,
                                                               normalized_collection_name).ratio()
