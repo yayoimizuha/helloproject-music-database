@@ -8,6 +8,8 @@ import re
 import time
 import unicodedata
 
+import Levenshtein
+
 import search_on_itunes
 from googleapiclient.discovery import build
 
@@ -75,13 +77,13 @@ def search_on_youtube(search_keyword, artist_keyword='', use_itunes_search=False
                                             video_info["items"][0]["snippet"]["channelId"]])
 
     # youtube_official_movies = [['https://youtu.be/O4Bl0ehLQic',
-    #                             '849803',
-    #                             63063344.15698552,
+    #                             '849759',
+    #                             63033286.33872008,
     #                             'KAN『ポップミュージック』 Short Version',
     #                             'UCB-MAg09TKnDv7shND16ghg'],
     #                            ['https://youtu.be/IrggLg_hGE0',
-    #                             '3920070',
-    #                             59589340.281062126,
+    #                             '3919620',
+    #                             59559282.48766899,
     #                             'Juice=Juice『ポップミュージック』(Juice=Juice [Pop Music])(Promotion Edit)',
     #                             'UC6FadPgGviUcq6VQ0CEJqdQ']]
     pprint.pprint(youtube_official_movies, indent=4)
@@ -89,17 +91,19 @@ def search_on_youtube(search_keyword, artist_keyword='', use_itunes_search=False
     movie_regex_one = r"[\(（]([a-zA-Z\s\[\]\'\"”””“\.…,\/　!！=。’℃・\-])*[\)）]"
     movie_regex_two = r"Promotion Edit"
     movie_regex_three = r"[\[\(（]([a-zA-Z\s”\[［\]］\.\/’\'&。”“0-9\?!×#~,（）])*[\]\)）]"
+    movie_regex_four = r"ショート|Short|short|Version|Ver.|Ver|バージョン|Dance|ダンス|リリック|"
     youtube_movies_sorter = []
     for i in range(len(youtube_official_movies)):
         movie_name = html.unescape(youtube_official_movies[i][3])
         movie_name = re.sub(movie_regex_one, '', movie_name)
         movie_name = re.sub(movie_regex_two, '', movie_name)
         movie_name = re.sub(movie_regex_three, '', movie_name)
+        movie_name = re.sub(movie_regex_four, "", movie_name)
         print(movie_name)
-        movie_name_diff = difflib.SequenceMatcher(None, movie_name, artist_keyword + ' ' + search_keyword).ratio()
+        movie_name_diff = Levenshtein.distance(movie_name, artist_keyword + ' ' + search_keyword)
         print(str(movie_name_diff) + "\n\n\n\n")
         youtube_movies_sorter.append(
-            [-round(int(youtube_official_movies[i][1]) * youtube_official_movies[i][2] * 10e-14 * movie_name_diff, 10),
+            [-round(int(youtube_official_movies[i][1]) * youtube_official_movies[i][2] * 10e-14 / movie_name_diff, 10),
              i])
 
     pprint.pprint(youtube_movies_sorter)
