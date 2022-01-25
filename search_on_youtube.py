@@ -1,7 +1,10 @@
 import datetime
+import difflib
+import html
 import json
 import os
 import pprint
+import re
 import time
 import unicodedata
 
@@ -71,22 +74,33 @@ def search_on_youtube(search_keyword, artist_keyword='', use_itunes_search=False
                                             search_result[i]["snippet"]["title"],
                                             video_info["items"][0]["snippet"]["channelId"]])
 
-    # youtube_official_movies = [['0Lo7k25-5PI',
-    #                             '2234351',
-    #                             324405827.7490101,
-    #                             'ハロー！プロジェクト モベキマス 『ブスにならない哲学』 '
-    #                             '(MV)'],
-    #                            ['QuvZHjnJcPg',
-    #                             '1229641',
-    #                             319933925.8114283,
-    #                             'ハロー！プロジェクト モベキマス 『ブスにならない哲学』 '
-    #                             '(Group Lip Ver.)']]
+    # youtube_official_movies = [['https://youtu.be/O4Bl0ehLQic',
+    #                             '849803',
+    #                             63063344.15698552,
+    #                             'KAN『ポップミュージック』 Short Version',
+    #                             'UCB-MAg09TKnDv7shND16ghg'],
+    #                            ['https://youtu.be/IrggLg_hGE0',
+    #                             '3920070',
+    #                             59589340.281062126,
+    #                             'Juice=Juice『ポップミュージック』(Juice=Juice [Pop Music])(Promotion Edit)',
+    #                             'UC6FadPgGviUcq6VQ0CEJqdQ']]
     pprint.pprint(youtube_official_movies, indent=4)
 
+    movie_regex_one = r"[\(（]([a-zA-Z\s\[\]\'\"”””“\.…,\/　!！=。’℃・\-])*[\)）]"
+    movie_regex_two = r"Promotion Edit"
+    movie_regex_three = r"[\[\(（]([a-zA-Z\s”\[［\]］\.\/’\'&。”“0-9\?!×#~,（）])*[\]\)）]"
     youtube_movies_sorter = []
     for i in range(len(youtube_official_movies)):
+        movie_name = html.unescape(youtube_official_movies[i][3])
+        movie_name = re.sub(movie_regex_one, '', movie_name)
+        movie_name = re.sub(movie_regex_two, '', movie_name)
+        movie_name = re.sub(movie_regex_three, '', movie_name)
+        print(movie_name)
+        movie_name_diff = difflib.SequenceMatcher(None, movie_name, artist_keyword + ' ' + search_keyword).ratio()
+        print(str(movie_name_diff) + "\n\n\n\n")
         youtube_movies_sorter.append(
-            [-round(int(youtube_official_movies[i][1]) * youtube_official_movies[i][2] * 10e-14, 10), i])
+            [-round(int(youtube_official_movies[i][1]) * youtube_official_movies[i][2] * 10e-14 * movie_name_diff, 10),
+             i])
 
     pprint.pprint(youtube_movies_sorter)
     if len(youtube_movies_sorter) == 0:

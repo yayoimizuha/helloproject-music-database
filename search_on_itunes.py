@@ -1,6 +1,7 @@
 import datetime
 import difflib
 import json
+import pprint
 import random
 import re
 import sys
@@ -124,6 +125,13 @@ def search_on_itunes(search_keyword, artist_keyword=""):
         date_distance = (time.time() - release_date) / (60 * 60 * 24 * 365 * 40)
         print('{:.4f}'.format(date_distance), end='\t')
         sort_index = gestalt_track_distance * gestalt_artist_distance + gestalt_collection_distance * 1 + date_distance
+
+        if "プッチベスト" in result_json[i]["collectionName"] or "プッチベスト" in result_json[i]["collectionName"]:
+            sort_index -= 0.3
+        if "album" in result_json[i]["collectionName"] or "Album" in result_json[i]["collectionName"] or "ALBUM" in \
+                result_json[i]["collectionName"] or "アルバム" in result_json[i]["collectionName"]:
+            sort_index -= 0.3
+
         print('{:.5f}'.format(sort_index), end='\t')
         print(datetime.datetime.fromtimestamp(release_date).strftime('%Y年%m月%d日'), end='\t')
 
@@ -139,10 +147,6 @@ def search_on_itunes(search_keyword, artist_keyword=""):
         if album_json["resultCount"] == 0:
             print('')
             continue
-
-        # if "プッチベスト" in result_json[i]["collectionName"] or "プッチベスト" in result_json[i]["collectionName"]:
-        #     print('')
-        #     continue
 
         if "copyright" not in album_json["results"][0]:
             print('')
@@ -199,4 +203,5 @@ def search_on_itunes(search_keyword, artist_keyword=""):
             "https://www.google.com/search?q=" + urllib.parse.quote(result["trackName"]),
             result, album_json]
 
-# pprint.pprint(search_on_itunes(search_keyword="氷点下"))
+
+# pprint.pprint(search_on_itunes(search_keyword="友よ", artist_keyword='アンジュルム'))
