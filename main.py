@@ -5,7 +5,7 @@ import sys
 import search_on_youtube
 from contextlib import redirect_stdout
 
-result = search_on_youtube.search_on_youtube(search_keyword="Cafe Buono!", artist_keyword='Buono!',
+result = search_on_youtube.search_on_youtube(search_keyword="大きな愛でもてなして", artist_keyword='℃-ute',
                                              api_key='AIzaSyC4rd76PUGRfPZlcS9q-28VB1nV34mZv4Y', use_itunes_search=True)
 
 pprint.pprint(result, indent=4)

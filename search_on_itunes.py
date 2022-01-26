@@ -1,5 +1,6 @@
 import datetime
 import difflib
+import html
 import json
 import pprint
 import random
@@ -34,7 +35,7 @@ def safe_request_get_as_text(url):
         if err_num > 5:
             continue
 
-    return unicodedata.normalize('NFKC', text)
+    return html.unescape(unicodedata.normalize('NFKC', text))
 
 
 def search_on_itunes(search_keyword, artist_keyword=""):
@@ -62,7 +63,7 @@ def search_on_itunes(search_keyword, artist_keyword=""):
         print('\t"' + artist_keyword + '"')
     result_json = safe_request_get_as_text(
         "https://itunes.apple.com/search?term=" + search_keyword +
-        "&media=music&entity=song&attribute=songTerm&country=jp&lang=ja_jp&limit=50&GenreTerm=J-Pop&sort=recent")
+        "&media=music&entity=song&attribute=songTerm&country=jp&lang=ja_jp&limit=100&GenreTerm=J-Pop&sort=recent")
     result_json = json.loads(result_json)
     result_json = result_json["results"]
 
@@ -74,7 +75,8 @@ def search_on_itunes(search_keyword, artist_keyword=""):
         if "releaseDate" not in result_json[i]:
             continue
         if int(result_json[i]["releaseDate"][0:4]) < 1995:
-            continue
+            pass
+            # continue
         if result_json[i]["isStreamable"] is True:
             continue
         if result_json[i]["primaryGenreName"] != "J-Pop":
@@ -154,6 +156,8 @@ def search_on_itunes(search_keyword, artist_keyword=""):
         if 'UP-FRONT' in album_json["results"][0]["copyright"]:
             pass
         elif 'PONY CANYON' in album_json["results"][0]["copyright"]:
+            pass
+        elif 'WARNER' in album_json["results"][0]["copyright"]:
             pass
         else:
             print('')

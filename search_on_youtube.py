@@ -60,6 +60,9 @@ def search_on_youtube(search_keyword, artist_keyword='', use_itunes_search=False
                                            id=search_result[i]["id"]["videoId"]).execute()
         video_info = json.loads(unicodedata.normalize('NFKC', json.dumps(video_info, ensure_ascii=False)))
 
+        if int(video_info["items"][0]["statistics"]["viewCount"]) < 5000:
+            continue
+
         if video_info["items"][0]["contentDetails"]["licensedContent"] is True:
             print("https://youtu.be/" + search_result[i]["id"]["videoId"])
             print(video_info["items"][0]["statistics"]["viewCount"] + "回")
@@ -71,8 +74,9 @@ def search_on_youtube(search_keyword, artist_keyword='', use_itunes_search=False
             youtube_official_movies.append(["https://youtu.be/" + search_result[i]["id"]["videoId"],
                                             video_info["items"][0]["statistics"]["viewCount"],
                                             time.time()
-                                            - datetime.datetime.fromisoformat(search_result[i]["snippet"]["publishTime"]
-                                                                              .replace('Z', '+00:00')).timestamp(),
+                                            - datetime.datetime.fromisoformat(
+                                                search_result[i]["snippet"]["publishTime"]
+                                                .replace('Z', '+00:00')).timestamp(),
                                             search_result[i]["snippet"]["title"],
                                             video_info["items"][0]["snippet"]["channelId"]])
 
@@ -94,7 +98,7 @@ def search_on_youtube(search_keyword, artist_keyword='', use_itunes_search=False
     movie_regex_four = r"ショート|Short|short|Version|Ver.|Ver|バージョン|Dance|ダンス|リリック|"
     youtube_movies_sorter = []
     for i in range(len(youtube_official_movies)):
-        movie_name = html.unescape(youtube_official_movies[i][3])
+        movie_name = youtube_official_movies[i][3]
         movie_name = re.sub(movie_regex_one, '', movie_name)
         movie_name = re.sub(movie_regex_two, '', movie_name)
         movie_name = re.sub(movie_regex_three, '', movie_name)
@@ -117,7 +121,8 @@ def search_on_youtube(search_keyword, artist_keyword='', use_itunes_search=False
     channel = json.loads(unicodedata.normalize('NFKC', json.dumps(channel, ensure_ascii=False)))
 
     youtube_official_movies[youtube_movie].append(channel["items"][0]["snippet"]["title"])
-
+    youtube_official_movies[youtube_movie][3] = html.unescape(youtube_official_movies[youtube_movie][3])
+    youtube_official_movies[youtube_movie][5] = html.unescape(youtube_official_movies[youtube_movie][5])
     return [itunes_search, youtube_official_movies[youtube_movie]]
 
 # youtube_search = search_on_youtube(search_keyword="がんばれないよ", artist_keyword="Juice=Juice")
