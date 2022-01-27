@@ -14,13 +14,13 @@ import mojimoji
 import requests
 
 
-def safe_request_get_as_text(url):
+def safe_request_get_as_text(url, header=''):
     err_num = 0
     get_error = 0
     text = ""
     while get_error == 0:
         try:
-            page = requests.get(url)
+            page = requests.get(url, headers=header)
             text = page.text
             if page.status_code == 404:
                 return None
@@ -206,6 +206,5 @@ def search_on_itunes(search_keyword, artist_keyword=""):
             result["artworkUrl100"].replace("100x100bb", "5000x5000bb"),
             "https://www.google.com/search?q=" + urllib.parse.quote(result["trackName"]),
             result, album_json]
-
 
 # pprint.pprint(search_on_itunes(search_keyword="友よ", artist_keyword='アンジュルム'))
