@@ -53,7 +53,11 @@ def road_release_page(url):
 
 # road_table(road_release_page(road_release_list(release_url)))
 
-release_list_urls = ["http://www.up-front-works.jp/release/search/?-s=1&g=single&p=1"]
+# release_list_urls = ["http://www.up-front-works.jp/release/search/?-s=1&g=single&p=1"]
+release_list_urls = []
+for i in range(39):
+    print("http://www.up-front-works.jp/release/search/?-s=1&g=single&p=" + str(i + 1))
+    release_list_urls.append("http://www.up-front-works.jp/release/search/?-s=1&g=single&p=" + str(i + 1))
 
 for release_list_url in release_list_urls:
     release_list_items = road_release_list(release_list_url)
@@ -64,6 +68,7 @@ for release_list_url in release_list_urls:
 
         for release_page_table in release_page_tables:
 
+            print("**************************************************")
             for column in release_page_table.find_all('tr'):
                 if not column.has_attr('class'):
                     if column.find('p') is None:
@@ -80,11 +85,11 @@ for release_list_url in release_list_urls:
                         continue
                     # print(column.find('p').has_attr('class'))
 
-                    print("-----------------------------------------------")
+                    print("---------------------")
+                    print(release_list_item[1].split(':')[0])
                     print(column.find('td', {'class': 'columnA'}).text + '\t' +
                           column.find('td', {'class': 'columnB'}).text + '\t' +
                           column.find('td', {'class': 'columnC'}).text + '\t' +
                           column.find('td', {'class': 'columnD'}).text + '\t' +
                           column.find('td', {'class': 'columnE'}).text + '\t' +
                           column.find('td', {'class': 'columnF'}).text)
-                    print(release_list_item[1].split(':')[0])
