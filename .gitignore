@@ -1,2 +1,6 @@
 venv
 .idea
+1.html
+*.xlsx
+
+__pycache__
