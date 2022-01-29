@@ -65,7 +65,7 @@ for page_num in range(39):
     print("http://www.up-front-works.jp/release/search/?-s=1&g=single&p=" + str(page_num + 1))
     release_list_urls.append("http://www.up-front-works.jp/release/search/?-s=1&g=single&p=" + str(page_num + 1))
 
-# release_list_urls = ["http://www.up-front-works.jp/release/search/?-s=1&g=single&p=3"]
+# release_list_urls = ["http://www.up-front-works.jp/release/search/?-s=1&g=single&p=36"]
 
 for release_list_url in release_list_urls:
     release_list_items = road_release_list(release_list_url)
@@ -103,9 +103,11 @@ for release_list_url in release_list_urls:
                           column.find('td', {'class': 'columnE'}).text + '\t' +
                           column.find('td', {'class': 'columnF'}).text)
 
-                    song_name = column.find('td', {'class': 'columnB'}).text
+                    song_name = column.find('td', {'class': 'columnB'}).contents[0]
 
-                    if "2018アコースティックVer." in song_name or "Lover" in song_name or "LOVER" in song_name:
+                    # if all(map(song_name.__contains__, ("2018アコースティックVer.", "Lover", "LOVER", "every", "Every"))):
+                    if re.search(r'2018アコースティックVer.|Lover|LOVER|every|Every', song_name,
+                                 flags=re.IGNORECASE) is not None:
                         re_text = r'(ボーカル|Inst|feat|カラオケ|テーマ|live|ライブ|mix|take|Al|edit|バージョン|ば〜じょん|' \
                                   r'ヴァージョン|主題歌|ソング|ニング|リミックス|accoustic|ボ-カル|duet|とともに|より|video)'
                     else:
@@ -117,7 +119,7 @@ for release_list_url in release_list_urls:
                     song_name = re.sub(r'[～](.*?)' + re_text + r'(.*?)[～]', '', song_name, flags=re.IGNORECASE)
                     song_name = re.sub(r'[〜](.*?)' + re_text + r'(.*?)[〜]', '', song_name, flags=re.IGNORECASE)
 
-                    song_name = re.sub(r'(Instrumental|feat|Ver|ver|カラオケ).*', '', song_name)
+                    song_name = re.sub(r'^\(.*?(Instrumental|feat|ver|カラオケ).*', '', song_name, flags=re.IGNORECASE)
                     song_name = re.sub(r'【|Additional Track|enhanced|】', '', song_name)
                     song_name = re.sub(r'※.*', '', song_name)
 
