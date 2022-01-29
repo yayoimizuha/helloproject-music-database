@@ -2,6 +2,9 @@
 import datetime
 import html
 import pprint
+import re
+import sys
+
 from search_on_itunes import safe_request_get_as_text
 from bs4 import BeautifulSoup
 import requests
@@ -62,7 +65,7 @@ for page_num in range(39):
     print("http://www.up-front-works.jp/release/search/?-s=1&g=single&p=" + str(page_num + 1))
     release_list_urls.append("http://www.up-front-works.jp/release/search/?-s=1&g=single&p=" + str(page_num + 1))
 
-# release_list_urls = ["http://www.up-front-works.jp/release/search/?-s=1&g=single&p=1"]
+# release_list_urls = ["http://www.up-front-works.jp/release/search/?-s=1&g=single&p=3"]
 
 for release_list_url in release_list_urls:
     release_list_items = road_release_list(release_list_url)
@@ -92,16 +95,36 @@ for release_list_url in release_list_urls:
                     # print(column.find('p').has_attr('class'))
 
                     print("---------------------")
-                    print(release_list_item[1].split(':')[0])
+                    print(release_list_item[1].rsplit(':', 1)[0])
                     print(column.find('td', {'class': 'columnA'}).text + '\t' +
                           column.find('td', {'class': 'columnB'}).text + '\t' +
                           column.find('td', {'class': 'columnC'}).text + '\t' +
                           column.find('td', {'class': 'columnD'}).text + '\t' +
                           column.find('td', {'class': 'columnE'}).text + '\t' +
                           column.find('td', {'class': 'columnF'}).text)
-                    release_music_list.append([release_list_item[1].split(':')[0],
-                                               release_list_item[1].split(':')[1].replace('\t', ''),
-                                               column.find('td', {'class': 'columnB'}).text,
+
+                    song_name = column.find('td', {'class': 'columnB'}).text
+
+                    if "2018アコースティックVer." in song_name or "Lover" in song_name or "LOVER" in song_name:
+                        re_text = r'(ボーカル|Inst|feat|カラオケ|テーマ|live|ライブ|mix|take|Al|edit|バージョン|ば〜じょん|' \
+                                  r'ヴァージョン|主題歌|ソング|ニング|リミックス|accoustic|ボ-カル|duet|とともに|より|video)'
+                    else:
+                        re_text = r'(ボーカル|Inst|feat|ver|カラオケ|テーマ|live|ライブ|mix|take|Al|edit|バージョン|ば〜じょん' \
+                                  r'|ヴァージョン|主題歌|ソング|ニング|リミックス|accoustic|ボ-カル|duet|とともに|より|video)'
+                    song_name = re.sub(r'[<](.*?)' + re_text + r'(.*?)[>]', '', song_name, flags=re.IGNORECASE)
+                    song_name = re.sub(r'[(](.*?)' + re_text + r'(.*?)[)]', '', song_name, flags=re.IGNORECASE)
+                    song_name = re.sub(r'[~](.*?)' + re_text + r'(.*?)[~]', '', song_name, flags=re.IGNORECASE)
+                    song_name = re.sub(r'[～](.*?)' + re_text + r'(.*?)[～]', '', song_name, flags=re.IGNORECASE)
+                    song_name = re.sub(r'[〜](.*?)' + re_text + r'(.*?)[〜]', '', song_name, flags=re.IGNORECASE)
+
+                    song_name = re.sub(r'(Instrumental|feat|Ver|ver|カラオケ).*', '', song_name)
+                    song_name = re.sub(r'【|Additional Track|enhanced|】', '', song_name)
+                    song_name = re.sub(r'※.*', '', song_name)
+
+                    # print(song_name)
+                    release_music_list.append([release_list_item[1].rsplit(':', 1)[0],
+                                               release_list_item[1].rsplit(':', 1)[1].replace('\t', ''),
+                                               song_name,
                                                release_list_item[0]])
 
 # pprint.pprint(release_music_list)
@@ -112,4 +135,12 @@ pandas.options.display.width = 6000
 pandas.options.display.max_colwidth = 6000
 
 # print(dataflame)
-dataflame.to_excel(str(datetime.date.today()) + '.xlsx')
+# dataflame.to_excel(str(datetime.date.today()) + '.xlsx')
+
+print("\nduplicated values:\n" + str(dataflame.duplicated().value_counts()))
+
+dataflame = dataflame.drop_duplicates()
+
+print(dataflame)
+
+dataflame.to_excel(str(datetime.date.today()) + '_dropped_duplicate.xlsx')
