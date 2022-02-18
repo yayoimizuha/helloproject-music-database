@@ -139,7 +139,7 @@ def search_on_itunes(search_keyword, artist_keyword=""):
 
         print(result_json[i]["collectionViewUrl"], end='\t')
 
-        if "Instrumental" in result_json[i]["trackName"]:
+        if "Instrumental" in result_json[i]["trackCensoredName"]:
             print('')
             continue
 
@@ -207,4 +207,5 @@ def search_on_itunes(search_keyword, artist_keyword=""):
             "https://www.google.com/search?q=" + urllib.parse.quote(result["trackName"]),
             result, album_json]
 
-# pprint.pprint(search_on_itunes(search_keyword="友よ", artist_keyword='アンジュルム'))
+
+pprint.pprint(search_on_itunes(search_keyword="泣けないぜ...共感詐欺"))
