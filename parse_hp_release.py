@@ -1,9 +1,6 @@
 import pprint
-import sys
-
 import pandas
 from bs4 import BeautifulSoup
-
 from search_on_itunes import safe_request_get_as_text
 
 pandas.options.display.max_rows = None
@@ -32,24 +29,11 @@ def crawl(base_url):
         if not len(contents):
             break
 
-        # print(contents)
         for content in contents:
-            # print(content)
             print('http://www.helloproject.com' + content.find('a')['href'])
-            # print('a')
-            # print(content.find('h4').text, end='\t')
-            # print(content.find('div', {'class': 'release_title'}).text, end='\t')
-            # print(content.find('time').text)
             process_page('http://www.helloproject.com' + content.find('a')['href'])
             print()
-
-        # [print(show.find('div', {'class': 'release_title'}).text) for show in page.find_all('section')]
-
         page_range += 1
-        if page_range == 2:
-            # return 0
-            continue
-            sys.exit(1)
 
 
 def process_page(page_url):
@@ -71,10 +55,10 @@ def process_page(page_url):
     print('\t' + release_date)
     print('\t' + record_label)
 
-    print('\t種数: ' + str(len(content.find_all('div', {'class': 'release_edition'}))))
+    print('\t板数: ' + str(len(content.find_all('div', {'class': 'release_edition'}))))
     for tables in content.find_all('table', {'class': 'typeB'}):
         if 'CD' in tables.find('th', {'colspan': '7'}).text or '配信' in tables.find('th', {'colspan': '7'}).text:
-            print('\t\tCD or 配信')
+            print('\t\t' + tables.find('th', {'colspan': '7'}).text)
         else:
             continue
         music_list = tables.find_all('tr')[2:]
@@ -93,17 +77,6 @@ def process_page(page_url):
             dataframe.loc[df_index] = escaped_data
             df_index += 1
 
-            # print(newframe)
-            # dataframe = pandas.concat([dataframe, newframe])
-
-    # [print(i.find('td', {'class': 'item02'}).text,
-    #        i.find('td', {'class': 'item03'}).text,
-    #        i.find('td', {'class': 'item04'}).text,
-    #        i.find('td', {'class': 'item05'}).text,
-    #        i.find('td', {'class': 'item06'}).text) for i in music_list]
-
-    # print('find table')
-
 
 crawl(single_release_url_base)
 print()
@@ -112,12 +85,14 @@ print()
 crawl(distribution_release_url_base)
 
 dataframe.sort_values('release_date', inplace=True)
-print(dataframe[dataframe['song_name'].str.contains(r'【.*?】')])
-print(dataframe[dataframe['song_name'].str.contains(r'\(*?inst|ver|mix.*?\)', case=False)])
+print('別verを削除: ' +
+      str(len(dataframe[dataframe['song_name'].str.contains(r'【.*?】')].index)
+          + len(dataframe[dataframe['song_name'].str.contains(r'\(*?inst|ver|mix.*?\)', case=False)].index)))
+
 dataframe = dataframe[dataframe['song_name'].str.contains(r'【.*?】') == False]
 dataframe = dataframe[dataframe['song_name'].str.contains(r'\(*?inst|ver|mix.*?\)', case=False) == False]
 
 dataframe.drop_duplicates(subset=['song_name', 'artist_name'], inplace=True)
-dataframe.reset_index(drop=True,inplace=True)
+dataframe.reset_index(drop=True, inplace=True)
 
 dataframe.to_excel('test.xlsx')
