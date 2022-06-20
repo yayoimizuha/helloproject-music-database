@@ -5,7 +5,7 @@ import sys
 import search_on_youtube
 from contextlib import redirect_stdout
 
-result = search_on_youtube.search_on_youtube(search_keyword="地球は今日も愛を育む", artist_keyword='笠原桃奈',
+result = search_on_youtube.search_on_youtube(search_keyword="Borderline", artist_keyword='Juice=Juice',
                                              api_key='AIzaSyC4rd76PUGRfPZlcS9q-28VB1nV34mZv4Y', use_itunes_search=True)
 
 pprint.pprint(result, indent=4)

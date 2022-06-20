@@ -20,12 +20,14 @@ def safe_request_get_as_text(url, header=''):
     text = ""
     while get_error == 0:
         try:
-            page = requests.get(url, headers=header)
+            page = requests.get(url, headers=header, timeout=3)
             text = page.text
-            if page.status_code == 404:
+            if int(page.status_code / 100) == 4:
                 return None
-            if page.status_code == 301:
+            if int(page.status_code / 100) % 2 == 1:
+                print("HTTP Error: " + str(page.status_code), file=sys.stderr)
                 time.sleep(5)
+                raise BaseException
             get_error += 1
         except BaseException as error:
             print("\n\n\n" + "Error occurred:(1) " + str(error) + "\n\n\n")
@@ -206,6 +208,5 @@ def search_on_itunes(search_keyword, artist_keyword=""):
             result["artworkUrl100"].replace("100x100bb", "5000x5000bb"),
             "https://www.google.com/search?q=" + urllib.parse.quote(result["trackName"]),
             result, album_json]
-
 
 # pprint.pprint(search_on_itunes(search_keyword="泣けないぜ...共感詐欺"))

@@ -10,7 +10,7 @@ from bs4 import BeautifulSoup
 import requests
 import pandas
 
-release_url = "http://www.up-front-works.jp/release/search/?-s=1&g=single&p=10"
+release_url = "http://www.up-front-works.jp/release/search/?-s=1&g=single&p="
 
 header = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:97.0) Gecko/20100101 Firefox/97.0'

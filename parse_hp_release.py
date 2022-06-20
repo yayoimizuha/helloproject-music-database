@@ -2,6 +2,7 @@ import pprint
 import pandas
 from bs4 import BeautifulSoup
 from search_on_itunes import safe_request_get_as_text
+from urllib import parse
 
 pandas.options.display.max_rows = None
 pandas.options.display.max_columns = None
@@ -12,6 +13,10 @@ pandas.options.display.colheader_justify = 'left'
 single_release_url_base = 'http://www.helloproject.com/release/search/?-s=1&g=single&p='
 album_release_url_base = 'http://www.helloproject.com/release/search/?-s=1&g=album&p='
 distribution_release_url_base = 'http://www.helloproject.com/release/search/?-s=1&g=distribution&p='
+
+# uf_single_release_url_base = 'http://www.up-front-works.jp/release/search/?-s=1&g=single'
+# uf_album_release_url_base = 'http://www.up-front-works.jp/release/search/?-s=1&g=album'
+# uf_distribution_release_url_base = 'http://www.up-front-works.jp/release/search/?-s=1&g=distribution'
 
 dataframe = pandas.DataFrame(
     columns=['url', 'artist_name', 'release_name', 'release_type', 'release_date',
@@ -30,8 +35,10 @@ def crawl(base_url):
             break
 
         for content in contents:
-            print('http://www.helloproject.com' + content.find('a')['href'])
-            process_page('http://www.helloproject.com' + content.find('a')['href'])
+            scheme = parse.urlparse(base_url).scheme + '://'
+            hostname = parse.urlparse(base_url).hostname
+            print(scheme + hostname + content.find('a')['href'])
+            process_page(scheme + hostname + content.find('a')['href'])
             print()
         page_range += 1
 
@@ -40,8 +47,8 @@ def process_page(page_url):
     global dataframe
     global df_index
     page = BeautifulSoup(safe_request_get_as_text(page_url), 'html.parser')
-    if page.find('li', {'class': 'thumb_m'}).find('a')['href'] == \
-            'http://cdn.helloproject.com/img/release/o/nowprinting.jpg':
+    if page.find('a', {'class': 'modal'})['href'] == \
+            'nowprinting.jpg':
         return 0
     content = page.find('div', {'id': 'rd_right'})
     release_name = content.find_all('h2')[0].text
@@ -55,7 +62,7 @@ def process_page(page_url):
     print('\t' + release_date)
     print('\t' + record_label)
 
-    print('\t板数: ' + str(len(content.find_all('div', {'class': 'release_edition'}))))
+    print('\t盤数: ' + str(len(content.find_all('div', {'class': 'release_edition'}))))
     for tables in content.find_all('table', {'class': 'typeB'}):
         if 'CD' in tables.find('th', {'colspan': '7'}).text or '配信' in tables.find('th', {'colspan': '7'}).text:
             print('\t\t' + tables.find('th', {'colspan': '7'}).text)
@@ -83,6 +90,8 @@ print()
 crawl(album_release_url_base)
 print()
 crawl(distribution_release_url_base)
+print()
+
 
 dataframe.sort_values('release_date', inplace=True)
 print('別verを削除: ' +
@@ -92,7 +101,7 @@ print('別verを削除: ' +
 dataframe = dataframe[dataframe['song_name'].str.contains(r'【.*?】') == False]
 dataframe = dataframe[dataframe['song_name'].str.contains(r'\(*?inst|ver|mix.*?\)', case=False) == False]
 
-dataframe.drop_duplicates(subset=['song_name', 'artist_name'], inplace=True)
+dataframe.drop_duplicates(subset=['song_name', 'release_name', 'artist_name'], inplace=True)
 dataframe.reset_index(drop=True, inplace=True)
 
-dataframe.to_excel('test.xlsx')
+dataframe.to_excel('hp.xlsx')
