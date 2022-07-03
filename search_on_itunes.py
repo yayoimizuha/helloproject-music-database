@@ -2,6 +2,8 @@ import datetime
 import difflib
 import html
 import json
+import operator
+import os
 import pprint
 import random
 import re
@@ -40,7 +42,89 @@ def safe_request_get_as_text(url, header=''):
     return html.unescape(unicodedata.normalize('NFKC', text))
 
 
-def search_on_itunes(search_keyword, artist_keyword=""):
+def search_on_itunes_v2(song_name='', album_name='', artist_name='', length=0, released_date=datetime.date.today(),
+                        debug=False):
+    if song_name != '':
+        print('曲名: ' + song_name)
+    if album_name != '':
+        print('収録アルバム名: ' + album_name)
+    if artist_name != '':
+        print('アーティスト名: ' + artist_name)
+    if song_name == '' and album_name == '':
+        return KeyError
+    if debug is False:
+        sys.stdout = open(os.devnull, 'w', encoding='UTF-8')
+
+    song_name = unicodedata.normalize('NFKC', song_name)
+    album_name = unicodedata.normalize('NFKC', album_name)
+
+    if song_name[-1:].isascii() or song_name[-1:].isdigit():
+        song_name += ' '
+    if song_name[0].isascii() or song_name[0].isdigit():
+        song_name = ' ' + song_name
+    song_name = mojimoji.zen_to_han(song_name, ascii=False, kana=False)
+
+    result_json = json.loads(safe_request_get_as_text(
+        "https://itunes.apple.com/search?term=" + song_name +
+        "&media=music&entity=song&attribute=songTerm&country=jp&lang=ja_jp&limit=10&GenreTerm=J-Pop&sort=recent"))
+    # pprint.pprint(json.loads(result_json))
+    sort_list = []
+    if not result_json['results']:
+        return []
+    for content in result_json['results']:
+        pprint.pprint(content)
+        print('収録アルバム: ' + content['collectionName'])
+        itunes_released_date = datetime.datetime.fromisoformat(
+            str(content['releaseDate']).replace('Z', '+00:00')).date()
+        print(itunes_released_date)
+        print('アーティスト名: ' + content['artistName'])
+        print(content['artistViewUrl'])
+        print(str(content['artworkUrl100']).replace('100x100', '5000x5000'))
+        print(content['collectionViewUrl'])
+        print('曲名: ' + content['trackName'])
+        print('長さ: ' + str(int(content['trackTimeMillis'] / 1000)) + '秒')
+        collection_name_diff = difflib.SequenceMatcher(None, str(content['collectionName'])
+                                                       .replace('- Single', '').replace(' - EP', ''),
+                                                       album_name).ratio()
+        print()
+        print('album name diff inverted:', end='')
+        print(collection_name_diff)
+        print('released day diff: ', end='')
+        print(1 / (abs((itunes_released_date - released_date).days) + 1))
+        artist_name_diff = difflib.SequenceMatcher(None, content['artistName'], artist_name).ratio()
+        print('artist name diff: ', end='')
+        print(artist_name_diff)
+        print('length diff: ', end='')
+        print(1 / (abs(int(content['trackTimeMillis'] / 1000) - length) + 1))
+        print(collection_name_diff +
+              1 / (abs((itunes_released_date - released_date).days) + 1) +
+              artist_name_diff +
+              1 / (abs(int(content['trackTimeMillis'] / 1000) - length) + 1))
+
+        sort_list.append([content, collection_name_diff +
+                          1 / (abs((itunes_released_date - released_date).days) + 1) +
+                          artist_name_diff +
+                          1 / (abs(int(content['trackTimeMillis'] / 1000) - length) + 1)])
+        print("\n\n\n")
+    pprint.pprint(sorted(sort_list, key=operator.itemgetter(1))[-1])
+    sys.stdout = sys.__stdout__
+    return sorted(sort_list, key=operator.itemgetter(1))[-1]
+
+
+print(search_on_itunes_v2(song_name='おねがいネイル', album_name='モーニング刑事。', length=249,
+                          released_date=datetime.datetime.strptime('1998/09/30', '%Y/%m/%d').date(),
+                          artist_name='モーニング娘。&平家みちよ',
+                          debug=True))
+
+print(search_on_itunes_v2(song_name='My Days for You', album_name='真野恵里菜', length=261,
+                          released_date=datetime.datetime.strptime('2011/06/29', '%Y/%m/%d').date(),
+                          artist_name='真野恵里菜',
+                          debug=True))
+
+
+def search_on_itunes(search_keyword, artist_keyword="", debug=False):
+    if debug is False:
+        sys.stdout = open(os.devnull, 'w', encoding='UTF-8')
     if search_keyword == '':
         return []
     # original_keyword = search_keyword
@@ -186,6 +270,7 @@ def search_on_itunes(search_keyword, artist_keyword=""):
     album_json = json.loads(safe_request_get_as_text(
         "https://itunes.apple.com/lookup?country=jp&lang=ja_jp&id=" + str(result["collectionId"])))["results"][0]
     # album_json = unicodedata.normalize('NFKC', album_json)
+
     print(json.dumps(album_json, indent=4, ensure_ascii=False))
 
     print('\n\n')
@@ -200,6 +285,8 @@ def search_on_itunes(search_keyword, artist_keyword=""):
     artist_json = requests.get(
         "https://itunes.apple.com/lookup?country=jp&lang=ja_jp&id=" + str(result["artistId"])).text
     print(json.dumps(json.loads(artist_json)["results"][0], indent=4, ensure_ascii=False))
+
+    sys.stdout = sys.__stdout__
 
     return [result["collectionName"], result["collectionId"],
             result["trackName"], result["trackId"],
