@@ -51,6 +51,7 @@ def search_on_itunes_v2(song_name='', album_name='', artist_name='', length=0, r
     if artist_name != '':
         print('アーティスト名: ' + artist_name)
     if song_name == '' and album_name == '':
+        sys.stdout = sys.__stdout__
         return KeyError
     if debug is False:
         sys.stdout = open(os.devnull, 'w', encoding='UTF-8')
@@ -63,63 +64,70 @@ def search_on_itunes_v2(song_name='', album_name='', artist_name='', length=0, r
     if song_name[0].isascii() or song_name[0].isdigit():
         song_name = ' ' + song_name
     song_name = mojimoji.zen_to_han(song_name, ascii=False, kana=False)
-
-    result_json = json.loads(safe_request_get_as_text(
+    raw_result = safe_request_get_as_text(
         "https://itunes.apple.com/search?term=" + song_name +
-        "&media=music&entity=song&attribute=songTerm&country=jp&lang=ja_jp&limit=10&GenreTerm=J-Pop&sort=recent"))
+        "&media=music&entity=song&attribute=songTerm&country=jp&lang=ja_jp&limit=50&GenreTerm=J-Pop&sort=recent")
+    result_json = json.loads(raw_result)
     # pprint.pprint(json.loads(result_json))
     sort_list = []
     if not result_json['results']:
-        return []
+        sys.stdout = sys.__stdout__
+        return [None, None, 0]
     for content in result_json['results']:
-        pprint.pprint(content)
+        # pprint.pprint(content)
+        if 'releaseDate' not in content:
+            return [None, None, 0]
+        customized_data = []
         print('収録アルバム: ' + content['collectionName'])
         itunes_released_date = datetime.datetime.fromisoformat(
             str(content['releaseDate']).replace('Z', '+00:00')).date()
         print(itunes_released_date)
+        customized_data.append(itunes_released_date)
         print('アーティスト名: ' + content['artistName'])
         print(content['artistViewUrl'])
         print(str(content['artworkUrl100']).replace('100x100', '5000x5000'))
         print(content['collectionViewUrl'])
+        customized_data.extend([content['artistName'], content['artistViewUrl'],
+                                str(content['artworkUrl100']).replace('100x100', '5000x5000'),
+                                content['collectionViewUrl'], content['trackName'], content['trackTimeMillis'] / 1000])
         print('曲名: ' + content['trackName'])
         print('長さ: ' + str(int(content['trackTimeMillis'] / 1000)) + '秒')
+
         collection_name_diff = difflib.SequenceMatcher(None, str(content['collectionName'])
                                                        .replace('- Single', '').replace(' - EP', ''),
                                                        album_name).ratio()
-        print()
-        print('album name diff inverted:', end='')
-        print(collection_name_diff)
-        print('released day diff: ', end='')
-        print(1 / (abs((itunes_released_date - released_date).days) + 1))
-        artist_name_diff = difflib.SequenceMatcher(None, content['artistName'], artist_name).ratio()
-        print('artist name diff: ', end='')
-        print(artist_name_diff)
-        print('length diff: ', end='')
-        print(1 / (abs(int(content['trackTimeMillis'] / 1000) - length) + 1))
-        print(collection_name_diff +
-              1 / (abs((itunes_released_date - released_date).days) + 1) +
-              artist_name_diff +
-              1 / (abs(int(content['trackTimeMillis'] / 1000) - length) + 1))
+        print('album name diff :{}'.format(collection_name_diff))
 
-        sort_list.append([content, collection_name_diff +
-                          1 / (abs((itunes_released_date - released_date).days) + 1) +
-                          artist_name_diff +
-                          1 / (abs(int(content['trackTimeMillis'] / 1000) - length) + 1)])
+        released_date_diff = abs((itunes_released_date - released_date).days)
+        print('released day diff: {}'.format(released_date_diff))
+
+        artist_name_diff = difflib.SequenceMatcher(None, content['artistName'], artist_name).ratio()
+        print('artist name diff: {}'.format(artist_name_diff))
+
+        length_diff = abs(int(content['trackTimeMillis'] / 1000) - length)
+        print('length diff: {}'.format(length_diff))
+
+        if (collection_name_diff < 0.7) or (released_date_diff > 100) or (artist_name_diff < 0.7) or (length_diff > 20):
+            print("Too far from input...\n\n\n")
+            continue
+
+        sort_list.append([content, customized_data, collection_name_diff + 1 / (released_date_diff + 1) +
+                          artist_name_diff + 1 / (length_diff + 1)])
+
         print("\n\n\n")
+    if not sort_list:
+        sys.stdout = sys.__stdout__
+        return [None, None, 0]
     pprint.pprint(sorted(sort_list, key=operator.itemgetter(1))[-1])
     sys.stdout = sys.__stdout__
     return sorted(sort_list, key=operator.itemgetter(1))[-1]
 
 
-print(search_on_itunes_v2(song_name='おねがいネイル', album_name='モーニング刑事。', length=249,
-                          released_date=datetime.datetime.strptime('1998/09/30', '%Y/%m/%d').date(),
-                          artist_name='モーニング娘。&平家みちよ',
-                          debug=True))
-
-print(search_on_itunes_v2(song_name='My Days for You', album_name='真野恵里菜', length=261,
-                          released_date=datetime.datetime.strptime('2011/06/29', '%Y/%m/%d').date(),
-                          artist_name='真野恵里菜',
-                          debug=True))
+# res = search_on_itunes_v2(song_name='My Days for You', album_name='My Days for You', length=261,
+#                           released_date=datetime.datetime.strptime('2011/06/29', '%Y/%m/%d').date(),
+#                           artist_name='真野恵里菜',
+#                           debug=False)
+# pprint.pprint(res[1])
 
 
 def search_on_itunes(search_keyword, artist_keyword="", debug=False):
