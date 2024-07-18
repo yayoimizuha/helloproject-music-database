@@ -72,17 +72,20 @@ def process_page(page_url):
         for list_col in music_list:
             if list_col.find('td', {'class': 'hide_cell'}):
                 continue
-            data = [page_url, artist_name, release_name, release_type, release_date, record_label,
-                    list_col.find('td', {'class': 'item02'}).text,
-                    list_col.find('td', {'class': 'item03'}).text,
-                    list_col.find('td', {'class': 'item04'}).text,
-                    list_col.find('td', {'class': 'item05'}).text,
-                    list_col.find('td', {'class': 'item06'}).text]
-            escaped_data = []
-            [escaped_data.append(s.replace('\r', '').replace('\t', '').replace('\n', '')) for s in data]
-            pprint.pprint(escaped_data, width=1000)
-            dataframe.loc[df_index] = escaped_data
-            df_index += 1
+            try:
+                data = [page_url, artist_name, release_name, release_type, release_date, record_label,
+                        list_col.find('td', {'class': 'item02'}).text,
+                        list_col.find('td', {'class': 'item03'}).text,
+                        list_col.find('td', {'class': 'item04'}).text,
+                        list_col.find('td', {'class': 'item05'}).text,
+                        list_col.find('td', {'class': 'item06'}).text]
+                escaped_data = []
+                [escaped_data.append(s.replace('\r', '').replace('\t', '').replace('\n', '')) for s in data]
+                pprint.pprint(escaped_data, width=1000)
+                dataframe.loc[df_index] = escaped_data
+                df_index += 1
+            except:
+                pass
 
 
 crawl(single_release_url_base)
@@ -91,7 +94,6 @@ crawl(album_release_url_base)
 print()
 crawl(distribution_release_url_base)
 print()
-
 
 dataframe.sort_values('release_date', inplace=True)
 print('別verを削除: ' +
